@@ -1,46 +1,35 @@
 
 const express = require('express');
+const rateLimit = require('express-rate-limit');
+const myMw = require('./myMw');
+const myEmployeeRoutes = require("./routes/Mitarbeiter");
+const myCustomerRoutes = require("./routes/Kunde");
+const myAdditionRoutes = require("./routes/addition");
+const mySubstractionRoutes = require("./routes/substraction");
+const myDivisionRoutes = require("./routes/division");
+const myMultiplicationRoutes = require("./routes/multiplication");
 
 const app = express();
 
 const EXP_PORT = 8080;
 
+const limiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 50,
+    message: "Zu viele Anfragen",
+});
+
 app.use(express.static('public'));
 app.use(express.urlencoded({extended: true}));
-
-
-app.get("/meineTestanfrage", (req, res) => {
-    res.send("Anfrage empfangen");
-})
-
-// app.get(/\/[^\/]{3}.*/, (req, res) => {
-//     res.send("Anfrage mit mind. drei Zeichen bis zum 1. Slash");
-// })
-
-app.get("/kunde/*", (req, res, next) => {
-    res.write("Kunde\n");
-    next();
-})
-
-app.get("/kunde/anfrage", (req, res) => {
-    res.write("Kunde und Anfrage");
-    res.end();
-})
-
-app.get("/abteilung/:abteilungId/kunde/:kundeID", (req, res) => {
-    const {kundeID, abteilungId} = req.params;
-    const anrede = req.query.anrede ? req.query.anrede : "";
-    console.log(req.query.anrede);
-    res.send(`Abteilung: ${abteilungId}<br/>Kunde: ${anrede} ${kundeID}`);
-    });
-
-    
-app.get("/addierer", (req, res) => {
-    const {a, b} = req.query;
-    const sum = Number(a) + Number(b);
-    res.send(`Die Summe ist ${sum}`);
-})
+app.use("/api/", limiter);
+app.use("/api/", myMw);
+app.use("/api/mitarbeiter", myEmployeeRoutes);
+app.use("/api/kunde", myCustomerRoutes);
+app.use("/api/addition", myAdditionRoutes);
+app.use("/api/substraction", mySubstractionRoutes);
+app.use("/api/division", myDivisionRoutes);
+app.use("/api/multiplication", myMultiplicationRoutes);
 
 app.listen(EXP_PORT, () => {
     console.log(`Server running on port ${EXP_PORT}`);
-})
+});
